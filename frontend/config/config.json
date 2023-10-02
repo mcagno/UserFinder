@@ -1,0 +1,5 @@
+{
+  "userFinderApi": {
+    "url": "https://localhost:7264/api/UserFinder"
+  }
+}
