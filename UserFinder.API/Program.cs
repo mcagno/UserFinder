@@ -1,6 +1,4 @@
-using System.Text.Json;
 using MassTransit;
-using NServiceBus;
 using UserFinder.API.Messages;
 using UserFinder.API.Services;
 using UserFinder.Library;
@@ -56,6 +54,7 @@ app.Run();
 
 void ConfigureNServiceBus(WebApplicationBuilder webApplicationBuilder)
 {
+    webApplicationBuilder.Services.AddSingleton<IMessageSender, NServiceBusMessageSender>();
     webApplicationBuilder.Host.UseNServiceBus(context =>
     {
         switch (webApplicationBuilder.Configuration["EventBusSettings:Type"])
@@ -79,6 +78,7 @@ void ConfigureNServiceBus(WebApplicationBuilder webApplicationBuilder)
 
 void ConfigureMassTransit(WebApplicationBuilder webApplicationBuilder)
 {
+    webApplicationBuilder.Services.AddScoped<IMessageSender, MassTransitMessageSender>();
     webApplicationBuilder.Services.AddMassTransit(config =>
     {
         switch (webApplicationBuilder.Configuration["EventBusSettings:Type"])

@@ -1,5 +1,3 @@
-using MassTransit;
-using NServiceBus;
 using UserFinder.API.Messages;
 using UserFinder.Library;
 
@@ -8,14 +6,13 @@ namespace UserFinder.API.Services;
 public class UserFinderService
 {
     private readonly IUserRepository _userRepository;
-    private readonly IPublishEndpoint _publishEndpoint;
-    private readonly IMessageSession _session;
+    
+    private readonly IMessageSender _messageSender;
 
-    public UserFinderService(IUserRepository userRepository, IMessageSession session)
+    public UserFinderService(IUserRepository userRepository, IMessageSender messageSender)
     {
         _userRepository = userRepository;
-        //_publishEndpoint = publishEndpoint;
-        _session = session;
+        _messageSender = messageSender;
     }
 
     public async Task<IEnumerable<User>> FindUsersAsync(string searchString)
@@ -33,7 +30,7 @@ public class UserFinderService
         {
             var userInsertedMessage = new UserInsertedMessage(user.FirstName, user.LastName,
                 user.Email + $" ({i})");
-            await _session.Publish(userInsertedMessage);
+            await _messageSender.Send(userInsertedMessage);
         }
 
     }
