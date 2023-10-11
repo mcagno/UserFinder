@@ -25,26 +25,60 @@ namespace UserFinder.NotificationService
 
                         x.AddConsumer<NotificationConsumer>();
                         
-                        x.UsingRabbitMq((context, cfg) =>
+                        var queueType = hostContext.Configuration["EventBusSettings:Type"];
+                        if (queueType == "AmazonSQS")
                         {
-                            cfg.ClearSerialization();
-                            cfg.UseRawJsonSerializer(RawSerializerOptions.AnyMessageType);
-                            cfg.Host("localhost", "/", h =>
-                            {
-                                h.Username("guest");
-                                h.Password("guest");
-                            });
-                            var queueName = hostContext.Configuration["EventBusSettings:NotificationQueueName"];
 
-                            if (queueName != null)
-                                cfg.ReceiveEndpoint(queueName,
-                                    e =>
-                                    {
-                                        e.ConfigureConsumer<NotificationConsumer>(context);
-                                        e.Bind(hostContext.Configuration["EventBusSettings:UserExchangeName"]);
-                                    });
-                            cfg.ConfigureEndpoints(context);
-                        });
+                            x.UsingAmazonSqs((context, cfg) =>
+                            {
+                                cfg.ClearSerialization();
+                                cfg.UseRawJsonSerializer(RawSerializerOptions.AnyMessageType);
+                                cfg.Host("us-east-1", configurator => {});    
+                            
+                                var queueName = hostContext.Configuration["EventBusSettings:NotificationQueueName"];
+
+                                if (queueName != null)
+                                    cfg.ReceiveEndpoint(queueName,
+                                        e =>
+                                        {
+                                            e.ConfigureConsumer<NotificationConsumer>(context);
+                                            e.ConfigureConsumeTopology = false;
+                                            var exchangeName = hostContext.Configuration["EventBusSettings:UserExchangeName"];
+                                            e.Subscribe(exchangeName, s =>
+                                            {
+                                                // set topic attributes
+                                                /*s.TopicAttributes["DisplayName"] = "Public Event Topic";
+                                            s.TopicSubscriptionAttributes["some-subscription-attribute"] = "some-attribute-value";*/
+                                                s.TopicTags.Add("environment", "development");
+                                            });
+                                        });
+                                cfg.ConfigureEndpoints(context);
+                            });
+                        } else if (queueType == "RabbitMQ")
+                        {
+                            x.UsingRabbitMq((context, cfg) =>
+                            {
+                                cfg.ClearSerialization();
+                                cfg.UseRawJsonSerializer(RawSerializerOptions.AnyMessageType);
+                                cfg.Host("localhost", "/", h =>
+                                {
+                                    h.Username("guest");
+                                    h.Password("guest");
+                                });
+                                var queueName = hostContext.Configuration["EventBusSettings:NotificationQueueName"];
+
+                                if (queueName != null)
+                                    cfg.ReceiveEndpoint(queueName,
+                                        e =>
+                                        {
+                                            e.ConfigureConsumer<NotificationConsumer>(context);
+                                            e.Bind(hostContext.Configuration["EventBusSettings:UserExchangeName"]);
+                                        });
+                                cfg.ConfigureEndpoints(context);
+                            });
+                        }
+                        
+                        
 
                     });
                 });

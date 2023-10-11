@@ -54,8 +54,8 @@ app.Run();
 
 void ConfigureNServiceBus(WebApplicationBuilder webApplicationBuilder)
 {
-    webApplicationBuilder.Services.AddSingleton<IMessageSender, NServiceBusMessageSender>();
-    webApplicationBuilder.Host.UseNServiceBus(context =>
+    webApplicationBuilder.Services.AddScoped<IMessageSender, NServiceBusMessageSender>();
+    webApplicationBuilder.Host.UseNServiceBus(_ =>
     {
         switch (webApplicationBuilder.Configuration["EventBusSettings:Type"])
         {
@@ -84,11 +84,32 @@ void ConfigureMassTransit(WebApplicationBuilder webApplicationBuilder)
         switch (webApplicationBuilder.Configuration["EventBusSettings:Type"])
         {
             case "RabbitMQ":
-                config.UsingRabbitMq((ctx, cfg) =>
+                config.UsingRabbitMq((_, cfg) =>
                 {
                     cfg.ClearSerialization();
                     cfg.UseRawJsonSerializer(RawSerializerOptions.AnyMessageType);
                     cfg.Host(webApplicationBuilder.Configuration["EventBusSettings:HostAddress"]);
+                    cfg.Message<UserInsertedMessage>(x => x.SetEntityName("user-exchange"));
+                });
+                break;
+            case "AmazonSQS":
+                config.UsingAmazonSqs((_, cfg) =>
+                {
+                    cfg.ClearSerialization();
+                    cfg.UseRawJsonSerializer(RawSerializerOptions.AnyMessageType);
+                    const string awsRegion = "us-east-1";
+                    cfg.Host(awsRegion, _ =>
+                    {
+                        // optional - set the AWS Access key and Secret here if its not configured in the environment
+                        // h.AccessKey("your-iam-access-key");
+                        // h.SecretKey("your-iam-secret-key");
+
+                        // optional - specify a scope for all queues
+                        // h.Scope("dev");
+
+                        // optional - scope topics as well
+                        // h.EnableScopedTopics();
+                    });
                     cfg.Message<UserInsertedMessage>(x => x.SetEntityName("user-exchange"));
                 });
                 break;

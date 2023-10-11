@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="API + Single notification service" type="CompoundRunConfigurationType">
+    <toRun name="UserFinder.API: https" type="LaunchSettings" />
+    <toRun name="UserFinder.NotificationService" type="LaunchSettings" />
+    <method v="2" />
+  </configuration>
+</component>
